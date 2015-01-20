@@ -3,6 +3,11 @@
 from __future__ import print_function
 
 import pandas as pd
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as pl
+
 
 def preprocess_data(dataframe):
     dataframe['Gender'] = dataframe['Sex'].map( {'female': 0, 'male': 1} ).astype(int)
@@ -23,6 +28,7 @@ def preprocess_data(dataframe):
     # Remove the Name column, Cabin, Ticket, and Sex (since I copied and filled it to Gender)
     dataframe = dataframe.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId'], axis=1)
 
+    return dataframe
 
 def mymodel():
     traindf = pd.read_csv('train.csv')
@@ -33,22 +39,19 @@ def mymodel():
     
     print(traindf.columns)
     print(traindf.describe())
-    # print(traindf.head())
-    # print(testdf.head())
-    
-    # print(traindf['Sex'][traindf['Survived'] == 1][traindf['Sex'] == 'male'].count())
-    # print(traindf['Survived'].sum(), traindf['Survived'].count())
-    
-    list_of_men = traindf['Sex'] == 'male'
-    list_of_women = traindf['Sex'] == 'female'
+
+    list_of_men = traindf['Gender'] == 1
+    list_of_women = traindf['Gender'] == 0
     list_of_survivors = traindf['Survived'] == 1
     
     # Index([u'PassengerId', u'Survived', u'Pclass', u'Name', u'Sex', u'Age', u'SibSp', u'Parch', u'Ticket', u'Fare', u'Cabin', u'Embarked'], dtype='object')
     
     vars_to_consider = ['Pclass', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']
     for var in vars_to_consider:
-        
-    
+        pl.clf()
+        help(traindf[var].hist)
+        traindf[var].hist()
+        pl.savefig('%s_hist.png' % var)
     
     return
 
