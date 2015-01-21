@@ -2,14 +2,26 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
+import os
 import pandas as pd
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as pl
 
+from sklearn import linear_model
+from sklearn import svm, neighbors, svm, grid_search
 from sklearn import cross_validation
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.lda import LDA
+from sklearn.qda import QDA
+from sklearn.mixture import GMM
+from sklearn.decomposition import PCA
 
 
 def preprocess_data(dataframe):
@@ -18,6 +30,8 @@ def preprocess_data(dataframe):
     if len(dataframe.Embarked[ dataframe.Embarked.isnull() ]) > 0:
         dataframe.Embarked[ dataframe.Embarked.isnull() ] = dataframe.Embarked.dropna().mode().values
 
+    if len(dataframe.Fare[ dataframe.Fare.isnull() ]) > 0:
+        dataframe.Fare[ dataframe.Fare.isnull() ] = dataframe.Fare.dropna().mode().values
 
     Ports = list(enumerate(np.unique(dataframe['Embarked'])))    # determine all values of Embarked,
     Ports_dict = { name : i for i, name in Ports }              # set up a dictionary in the form  Ports : index
@@ -37,13 +51,17 @@ def create_html_page_of_plots(list_of_plots):
     if not os.path.exists('html'):
         os.makedirs('html')
     os.system('mv *.png html')
+    print(list_of_plots)
     with open('html/index.html', 'w') as htmlfile:
         htmlfile.write('<!DOCTYPE html><html><body><div>')
         for plot in list_of_plots:
-            htmlfile.wriet('<p><img src="%s"></p>' % plot)
+            htmlfile.write('<p><img src="%s"></p>' % plot)
         htmlfile.write('</div></html></html>')
     if os.path.exists('%s/public_html' % os.getenv('HOME')):
-        os.system('mv html %s/public_html/titanic_html' % os.getenv('HOME'))
+        if not os.path.exists('%s/public_html/titanic_html' % os.getenv('HOME')):
+            os.makedirs('%s/public_html/titanic_html' % os.getenv('HOME'))
+        os.system('rm %s/public_html/titanic_html/*' % os.getenv('HOME'))
+        os.system('cp html/* %s/public_html/titanic_html/' % os.getenv('HOME'))
 
 
 def plot_vars(df):
@@ -56,33 +74,92 @@ def plot_vars(df):
     list_of_plots = []
     for var in vars_to_consider:
         pl.clf()
-        df[var][list_of_survivors].hist(histtype='step', bins=50, color='blue')
-        df[var][list_of_casualties].hist(histtype='step', bins=50, color='red')
+        df[var][list_of_survivors].hist(histtype='step', bins=50, color='blue', label='Survived')
+        df[var][list_of_casualties].hist(histtype='step', bins=50, color='red', label='Died')
+        pl.title(var)
+        pl.legend(loc='upper left')
         pl.savefig('%s_hist.png' % var)
+        list_of_plots.append('%s_hist.png' % var)
     create_html_page_of_plots(list_of_plots)
+
+def score_model(model, xtrain, xtest, ytrain, ytest):
+    try:
+        model.fit(xtrain, ytrain)
+        return model.score(xtest, ytest)
+    except:
+        return 0.0
+
+def compare_models(traindata):
+    classifier_dict = {
+                #'gridCV': clf,
+                'linear_model': linear_model.LogisticRegression(fit_intercept=False,penalty='l1'),
+                'linSVC': svm.LinearSVC(),
+                'kNC5': KNeighborsClassifier(),
+                #'kNC6': KNeighborsClassifier(6),
+                'SVC': SVC(kernel="linear", C=0.025),
+                'DT': DecisionTreeClassifier(max_depth=5),
+                'RF': RandomForestClassifier(n_estimators=200),
+                'Ada': AdaBoostClassifier(),
+                'Gauss': GaussianNB(),
+                'LDA': LDA(),
+                'QDA': QDA(),
+                'SVC2': SVC(),
+              }
+
+    model_scores = {}
+    for name in classifier_dict.keys():
+        model_scores[name] = []
+    for N in range(10):
+        randint = reduce(lambda x,y: x|y, [ord(x)<<(n*8) for (n,x) in enumerate(os.urandom(4))])
+        xtrain, xtest, ytrain, ytest = cross_validation.train_test_split(traindata[0::,1::], traindata[0::,0], test_size=0.4, random_state=randint)
+        
+        #print('Training...')
+        #forest = RandomForestClassifier(n_estimators=200)
+        #forest = forest.fit(xtrain, ytrain)
+        #print(traindf.columns[1:])
+        #print(forest.feature_importances_)
+        #print('score:', forest.score(xtest, ytest))
+        
+        for name, cl in classifier_dict.items():
+            model_scores[name].append(score_model(cl, xtrain, xtest, ytrain, ytest))
+    for k in model_scores:
+        model_scores[k] = sum(model_scores[k]) / len(model_scores[k])
+    print('\n'.join('%s %f' % (x[0], x[1]) for x in sorted(model_scores.items(), key=lambda x: x[1])))
+
 
 def mymodel():
     traindf = pd.read_csv('train.csv')
-    # testdf = pd.read_csv('test.csv')
+    testdf = pd.read_csv('test.csv')
+    
+    testid = testdf['PassengerId'].values
     
     traindf = preprocess_data(traindf)
-    # testdf = preprocess_data(testdf)
+    testdf = preprocess_data(testdf)
     
     print(traindf.describe())
 
     plot_vars(traindf)
     
-    traindata = traindf.values
+    #traindf = traindf.drop(['Pclass', 'SibSp', 'Parch', 'Embarked'], axis=1)
+    #print(traindf.columns)
+    #print(testdf.columns)
+    #for var in testdf.columns:
+        #print(testdf[var][testdf[var].isnull()])
+    #traindata = traindf.values
+    #testdata = testdf.values
+
+    #compare_models(traindata)
     
-    #for n in range(10):
-    xtrain, xtest, ytrain, ytest = cross_validation.train_test_split(traindata[0::,1::], traindata[0::,0], test_size=0.5, random_state=0)
+    xtrain = traindata[0::,1::]
+    ytrain = traindata[0::,0]
+    xtest = testdata
     
-    print('Training...')
     forest = RandomForestClassifier(n_estimators=200)
-    forest = forest.fit(xtrain, ytrain)
-    print(traindf.columns[1:])
-    print(forest.feature_importances_)
-    print('score:', forest.score(xtest, ytest))
+    forest.fit(xtrain, ytrain)
+    ytest = forest.predict(xtest)
+    
+    submitdf = pd.DataFrame(data={'PassengerId': testid, 'Survived': ytest.astype(int)})
+    submitdf.to_csv('submit.csv', index=False)
     
     return
 
