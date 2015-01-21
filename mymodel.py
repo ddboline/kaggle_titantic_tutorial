@@ -145,8 +145,8 @@ def mymodel():
     #print(testdf.columns)
     #for var in testdf.columns:
         #print(testdf[var][testdf[var].isnull()])
-    #traindata = traindf.values
-    #testdata = testdf.values
+    traindata = traindf.values
+    testdata = testdf.values
 
     #compare_models(traindata)
     
