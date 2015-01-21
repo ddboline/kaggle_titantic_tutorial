@@ -33,6 +33,16 @@ def preprocess_data(dataframe):
 
     return dataframe
 
+def create_html_page_of_plots(list_of_plots):
+    with open('index.html', 'w') as htmlfile:
+        htmlfile.write('<!DOCTYPE html><html><body><div>')
+        for plot in list_of_plots:
+            htmlfile.wriet('<p><img src="%s"></p>' % plot)
+        htmlfile.write('</div></html></html>')
+    if os.path.exists('%s/public_html' % os.getenv('HOME')):
+        os.system('mv index.html %s/public_html' % os.getenv('HOME'))
+
+
 def plot_vars(df):
     list_of_men = df['Gender'] == 1
     list_of_women = df['Gender'] == 0
@@ -40,15 +50,13 @@ def plot_vars(df):
     list_of_casualties = df['Survived'] == 0
     
     vars_to_consider = ['Pclass', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked', 'Gender']
+    list_of_plots = []
     for var in vars_to_consider:
         pl.clf()
-        #help(df[var].hist)
-        #df[var][list_of_men].hist(histtype='step', bins=50, color='blue')
-        #df[var][list_of_women].hist(histtype='step', bins=50, color='red')
         df[var][list_of_survivors].hist(histtype='step', bins=50, color='blue')
         df[var][list_of_casualties].hist(histtype='step', bins=50, color='red')
         pl.savefig('%s_hist.png' % var)
-
+    create_html_page_of_plots(list_of_plots)
 
 def mymodel():
     traindf = pd.read_csv('train.csv')
