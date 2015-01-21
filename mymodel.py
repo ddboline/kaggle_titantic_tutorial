@@ -8,6 +8,9 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as pl
 
+from sklearn import cross_validation
+from sklearn.ensemble import RandomForestClassifier
+
 
 def preprocess_data(dataframe):
     dataframe['Gender'] = dataframe['Sex'].map( {'female': 0, 'male': 1} ).astype(int)
@@ -30,6 +33,20 @@ def preprocess_data(dataframe):
 
     return dataframe
 
+def plot_vars(df):
+    list_of_men = df['Gender'] == 1
+    list_of_women = df['Gender'] == 0
+    list_of_survivors = df['Survived'] == 1
+    
+    vars_to_consider = ['Pclass', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']
+    for var in vars_to_consider:
+        pl.clf()
+        #help(df[var].hist)
+        df[var][list_of_men].hist(histtype='step', bins=50, color='blue')
+        df[var][list_of_women].hist(histtype='step', bins=50, color='red')
+        pl.savefig('%s_hist.png' % var)
+
+
 def mymodel():
     traindf = pd.read_csv('train.csv')
     # testdf = pd.read_csv('test.csv')
@@ -37,21 +54,18 @@ def mymodel():
     traindf = preprocess_data(traindf)
     # testdf = preprocess_data(testdf)
     
-    print(traindf.columns)
     print(traindf.describe())
 
-    list_of_men = traindf['Gender'] == 1
-    list_of_women = traindf['Gender'] == 0
-    list_of_survivors = traindf['Survived'] == 1
+    plot_vars(traindf)
     
-    # Index([u'PassengerId', u'Survived', u'Pclass', u'Name', u'Sex', u'Age', u'SibSp', u'Parch', u'Ticket', u'Fare', u'Cabin', u'Embarked'], dtype='object')
+    traindata = traindf.values
     
-    vars_to_consider = ['Pclass', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']
-    for var in vars_to_consider:
-        pl.clf()
-        help(traindf[var].hist)
-        traindf[var].hist()
-        pl.savefig('%s_hist.png' % var)
+    xtrain, xtest, ytrain, ytest = cross_validation.train_test_split(traindata[0::,1::], traindata[0::,0], test_size=0.5, random_state=0)
+    
+    print('Training...')
+    forest = RandomForestClassifier(n_estimators=50)
+    forest = forest.fit(xtrain, ytrain)
+    print('score:', forest.score(xtest, ytest))
     
     return
 
