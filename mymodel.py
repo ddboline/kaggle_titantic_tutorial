@@ -34,13 +34,16 @@ def preprocess_data(dataframe):
     return dataframe
 
 def create_html_page_of_plots(list_of_plots):
-    with open('index.html', 'w') as htmlfile:
+    if not os.path.exists('html'):
+        os.makedirs('html')
+    os.system('mv *.png html')
+    with open('html/index.html', 'w') as htmlfile:
         htmlfile.write('<!DOCTYPE html><html><body><div>')
         for plot in list_of_plots:
             htmlfile.wriet('<p><img src="%s"></p>' % plot)
         htmlfile.write('</div></html></html>')
     if os.path.exists('%s/public_html' % os.getenv('HOME')):
-        os.system('mv index.html %s/public_html' % os.getenv('HOME'))
+        os.system('mv html %s/public_html/titanic_html' % os.getenv('HOME'))
 
 
 def plot_vars(df):
