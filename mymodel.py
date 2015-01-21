@@ -37,13 +37,16 @@ def plot_vars(df):
     list_of_men = df['Gender'] == 1
     list_of_women = df['Gender'] == 0
     list_of_survivors = df['Survived'] == 1
+    list_of_casualties = df['Survived'] == 0
     
-    vars_to_consider = ['Pclass', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']
+    vars_to_consider = ['Pclass', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked', 'Gender']
     for var in vars_to_consider:
         pl.clf()
         #help(df[var].hist)
-        df[var][list_of_men].hist(histtype='step', bins=50, color='blue')
-        df[var][list_of_women].hist(histtype='step', bins=50, color='red')
+        #df[var][list_of_men].hist(histtype='step', bins=50, color='blue')
+        #df[var][list_of_women].hist(histtype='step', bins=50, color='red')
+        df[var][list_of_survivors].hist(histtype='step', bins=50, color='blue')
+        df[var][list_of_casualties].hist(histtype='step', bins=50, color='red')
         pl.savefig('%s_hist.png' % var)
 
 
@@ -60,11 +63,14 @@ def mymodel():
     
     traindata = traindf.values
     
+    #for n in range(10):
     xtrain, xtest, ytrain, ytest = cross_validation.train_test_split(traindata[0::,1::], traindata[0::,0], test_size=0.5, random_state=0)
     
     print('Training...')
-    forest = RandomForestClassifier(n_estimators=50)
+    forest = RandomForestClassifier(n_estimators=200)
     forest = forest.fit(xtrain, ytrain)
+    print(traindf.columns[1:])
+    print(forest.feature_importances_)
     print('score:', forest.score(xtest, ytest))
     
     return
