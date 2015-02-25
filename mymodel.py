@@ -98,7 +98,7 @@ def compare_models(traindata):
                 #'kNC6': KNeighborsClassifier(6),
                 #'SVC': SVC(kernel="linear", C=0.025),
                 #'DT': DecisionTreeClassifier(max_depth=5),
-                'RF': RandomForestClassifier(n_estimators=200),
+                'RF': RandomForestClassifier(n_estimators=400),
                 #'Ada': AdaBoostClassifier(),
                 #'Gauss': GaussianNB(),
                 #'LDA': LDA(),
@@ -154,7 +154,7 @@ def mymodel():
     ytrain = traindata[0::,0]
     xtest = testdata
     
-    forest = RandomForestClassifier(n_estimators=200)
+    forest = RandomForestClassifier(n_estimators=400)
     forest.fit(xtrain, ytrain)
     ytest = forest.predict(xtest)
     
