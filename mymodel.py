@@ -92,18 +92,18 @@ def score_model(model, xtrain, xtest, ytrain, ytest):
 def compare_models(traindata):
     classifier_dict = {
                 #'gridCV': clf,
-                'linear_model': linear_model.LogisticRegression(fit_intercept=False,penalty='l1'),
-                'linSVC': svm.LinearSVC(),
-                'kNC5': KNeighborsClassifier(),
+                #'linear_model': linear_model.LogisticRegression(fit_intercept=False,penalty='l1'),
+                #'linSVC': svm.LinearSVC(),
+                #'kNC5': KNeighborsClassifier(),
                 #'kNC6': KNeighborsClassifier(6),
-                'SVC': SVC(kernel="linear", C=0.025),
-                'DT': DecisionTreeClassifier(max_depth=5),
+                #'SVC': SVC(kernel="linear", C=0.025),
+                #'DT': DecisionTreeClassifier(max_depth=5),
                 'RF': RandomForestClassifier(n_estimators=200),
-                'Ada': AdaBoostClassifier(),
-                'Gauss': GaussianNB(),
-                'LDA': LDA(),
-                'QDA': QDA(),
-                'SVC2': SVC(),
+                #'Ada': AdaBoostClassifier(),
+                #'Gauss': GaussianNB(),
+                #'LDA': LDA(),
+                #'QDA': QDA(),
+                #'SVC2': SVC(),
               }
 
     model_scores = {}
@@ -148,7 +148,7 @@ def mymodel():
     traindata = traindf.values
     testdata = testdf.values
 
-    #compare_models(traindata)
+    compare_models(traindata)
     
     xtrain = traindata[0::,1::]
     ytrain = traindata[0::,0]
