@@ -22,7 +22,7 @@ from sklearn.lda import LDA
 from sklearn.qda import QDA
 from sklearn.mixture import GMM
 from sklearn.decomposition import PCA
-
+from sklearn.metrics import accuracy_score
 
 def preprocess_data(dataframe):
     dataframe['Gender'] = dataframe['Sex'].map( {'female': 0, 'male': 1} ).astype(int)
@@ -40,7 +40,7 @@ def preprocess_data(dataframe):
     # All the ages with no data -> make the median of all Ages
     median_age = dataframe['Age'].dropna().median()
     if len(dataframe.Age[ dataframe.Age.isnull() ]) > 0:
-        dataframe.loc[ (dataframe.Age.isnull()), 'Age'] = median_age
+        dataframe.loc[ (dataframe.Age.isnull()), 'Age'] = -1
 
     # Remove the Name column, Cabin, Ticket, and Sex (since I copied and filled it to Gender)
     dataframe = dataframe.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId'], axis=1)
@@ -87,20 +87,22 @@ def score_model(model, xtrain, xtest, ytrain, ytest):
         model.fit(xtrain, ytrain)
         return model.score(xtest, ytest)
     except:
+        print('failure')
         return 0.0
 
 def compare_models(traindata):
     classifier_dict = {
                 #'gridCV': clf,
-                #'linear_model': linear_model.LogisticRegression(fit_intercept=False,penalty='l1'),
+                'linear_model': linear_model.LogisticRegression(fit_intercept=False,penalty='l1'),
                 #'linSVC': svm.LinearSVC(),
                 #'kNC5': KNeighborsClassifier(),
                 #'kNC6': KNeighborsClassifier(6),
                 #'SVC': SVC(kernel="linear", C=0.025),
+                #'SVC': SVC(kernel='poly'),
                 #'DT': DecisionTreeClassifier(max_depth=5),
                 'RF': RandomForestClassifier(n_estimators=400),
-                #'Ada': AdaBoostClassifier(),
-                #'Gauss': GaussianNB(),
+                'Ada': AdaBoostClassifier(),
+                'Gauss': GaussianNB(),
                 #'LDA': LDA(),
                 #'QDA': QDA(),
                 #'SVC2': SVC(),
@@ -109,7 +111,7 @@ def compare_models(traindata):
     model_scores = {}
     for name in classifier_dict.keys():
         model_scores[name] = []
-    for N in range(10):
+    for N in range(1):
         randint = reduce(lambda x,y: x|y, [ord(x)<<(n*8) for (n,x) in enumerate(os.urandom(4))])
         xtrain, xtest, ytrain, ytest = cross_validation.train_test_split(traindata[0::,1::], traindata[0::,0], test_size=0.4, random_state=randint)
         
@@ -127,7 +129,7 @@ def compare_models(traindata):
     print('\n'.join('%s %f' % (x[0], x[1]) for x in sorted(model_scores.items(), key=lambda x: x[1])))
 
 
-def mymodel():
+def mymodel(do_plots=False, do_comparison=False, do_submission=False):
     traindf = pd.read_csv('train.csv')
     testdf = pd.read_csv('test.csv')
     
@@ -138,30 +140,30 @@ def mymodel():
     
     print(traindf.describe())
 
-    plot_vars(traindf)
-    
-    #traindf = traindf.drop(['Pclass', 'SibSp', 'Parch', 'Embarked'], axis=1)
-    #print(traindf.columns)
-    #print(testdf.columns)
-    #for var in testdf.columns:
-        #print(testdf[var][testdf[var].isnull()])
+    train_cols = traindf.columns
+    test_cols = testdf.columns
     traindata = traindf.values
     testdata = testdf.values
 
-    compare_models(traindata)
-    
-    xtrain = traindata[0::,1::]
-    ytrain = traindata[0::,0]
-    xtest = testdata
-    
-    forest = RandomForestClassifier(n_estimators=400)
-    forest.fit(xtrain, ytrain)
-    ytest = forest.predict(xtest)
-    
-    submitdf = pd.DataFrame(data={'PassengerId': testid, 'Survived': ytest.astype(int)})
-    submitdf.to_csv('submit.csv', index=False)
-    
+    if do_plots:
+        plot_vars(traindf)
+
+    if do_comparison:
+        compare_models(traindata)
+
+    if do_submission:
+        xtrain = traindata[0::,1::]
+        ytrain = traindata[0::,0]
+        xtest = testdata
+        
+        forest = RandomForestClassifier(n_estimators=400)
+        forest.fit(xtrain, ytrain)
+        ytest = forest.predict(xtest)
+        
+        submitdf = pd.DataFrame(data={'PassengerId': testid, 'Survived': ytest.astype(int)})
+        submitdf.to_csv('submit.csv', index=False)
+
     return
 
 if __name__ == '__main__':
-    mymodel()
+    mymodel(do_plots=True)
