@@ -43,7 +43,10 @@ def preprocess_data(dataframe):
         dataframe.loc[ (dataframe.Age.isnull()), 'Age'] = -1
 
     # Remove the Name column, Cabin, Ticket, and Sex (since I copied and filled it to Gender)
-    dataframe = dataframe.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId'], axis=1)
+    dataframe = dataframe.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId',
+                                'SibSp', 'Parch', 'Embarked', 'Fare', 'Age', 
+                                #'Pclass',
+                                ], axis=1)
 
     return dataframe
 
@@ -74,8 +77,8 @@ def plot_vars(df):
     list_of_plots = []
     for var in vars_to_consider:
         pl.clf()
-        df[var][list_of_survivors].hist(histtype='step', bins=50, color='blue', label='Survived')
-        df[var][list_of_casualties].hist(histtype='step', bins=50, color='red', label='Died')
+        df[var][list_of_survivors][list_of_women].hist(histtype='step', bins=50, color='blue', label='Survived')
+        df[var][list_of_casualties][list_of_women].hist(histtype='step', bins=50, color='red', label='Died')
         pl.title(var)
         pl.legend(loc='upper left')
         pl.savefig('%s_hist.png' % var)
@@ -93,12 +96,12 @@ def score_model(model, xtrain, xtest, ytrain, ytest):
 def compare_models(traindata):
     classifier_dict = {
                 #'gridCV': clf,
-                'linear_model': linear_model.LogisticRegression(fit_intercept=False,penalty='l1'),
+                #'linear_model': linear_model.LogisticRegression(fit_intercept=False,penalty='l1'),
                 #'linSVC': svm.LinearSVC(),
                 #'kNC5': KNeighborsClassifier(),
                 #'kNC6': KNeighborsClassifier(6),
-                #'SVC': SVC(kernel="linear", C=0.025),
-                #'SVC': SVC(kernel='poly'),
+                'SVC': SVC(kernel="linear", C=0.025),
+                #'SVC': SVC(kernel='rbf', C=0.025, ),
                 #'DT': DecisionTreeClassifier(max_depth=5),
                 'RF': RandomForestClassifier(n_estimators=400),
                 'Ada': AdaBoostClassifier(),
@@ -138,6 +141,7 @@ def mymodel(do_plots=False, do_comparison=False, do_submission=False):
     traindf = preprocess_data(traindf)
     testdf = preprocess_data(testdf)
     
+    print(traindf.columns)
     print(traindf.describe())
 
     train_cols = traindf.columns
@@ -156,9 +160,9 @@ def mymodel(do_plots=False, do_comparison=False, do_submission=False):
         ytrain = traindata[0::,0]
         xtest = testdata
         
-        forest = RandomForestClassifier(n_estimators=400)
-        forest.fit(xtrain, ytrain)
-        ytest = forest.predict(xtest)
+        model = SVC(kernel="linear", C=0.025)
+        model.fit(xtrain, ytrain)
+        ytest = model.predict(xtest)
         
         submitdf = pd.DataFrame(data={'PassengerId': testid, 'Survived': ytest.astype(int)})
         submitdf.to_csv('submit.csv', index=False)
@@ -166,4 +170,4 @@ def mymodel(do_plots=False, do_comparison=False, do_submission=False):
     return
 
 if __name__ == '__main__':
-    mymodel(do_plots=True)
+    mymodel(do_comparison=True)
