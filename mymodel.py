@@ -25,28 +25,28 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import accuracy_score
 
 def preprocess_data(dataframe):
-    dataframe['Gender'] = dataframe['Sex'].map( {'female': 0, 'male': 1} ).astype(int)
-    
-    if len(dataframe.Embarked[ dataframe.Embarked.isnull() ]) > 0:
-        dataframe.Embarked[ dataframe.Embarked.isnull() ] = dataframe.Embarked.dropna().mode().values
+    dataframe['Gender'] = dataframe['Sex'].map({'female': 0, 'male': 1}).astype(int)
 
-    if len(dataframe.Fare[ dataframe.Fare.isnull() ]) > 0:
-        dataframe.Fare[ dataframe.Fare.isnull() ] = dataframe.Fare.dropna().mode().values
+    if len(dataframe.Embarked[dataframe.Embarked.isnull()]) > 0:
+        dataframe.Embarked[dataframe.Embarked.isnull()] = dataframe.Embarked.dropna().mode().values
+
+    if len(dataframe.Fare[dataframe.Fare.isnull()]) > 0:
+        dataframe.Fare[dataframe.Fare.isnull()] = dataframe.Fare.dropna().mode().values
 
     Ports = list(enumerate(np.unique(dataframe['Embarked'])))    # determine all values of Embarked,
-    Ports_dict = { name : i for i, name in Ports }              # set up a dictionary in the form  Ports : index
-    dataframe.Embarked = dataframe.Embarked.map( lambda x: Ports_dict[x]).astype(int)     # Convert all Embark strings to int
+    Ports_dict = {name: i for i, name in Ports}              # set up a dictionary in the form  Ports: index
+    dataframe.Embarked = dataframe.Embarked.map(lambda x: Ports_dict[x]).astype(int)     # Convert all Embark strings to int
 
     # All the ages with no data -> make the median of all Ages
     median_age = dataframe['Age'].dropna().median()
-    if len(dataframe.Age[ dataframe.Age.isnull() ]) > 0:
-        dataframe.loc[ (dataframe.Age.isnull()), 'Age'] = -1
+    if len(dataframe.Age[dataframe.Age.isnull()]) > 0:
+        dataframe.loc[(dataframe.Age.isnull()), 'Age'] = -1
 
     # Remove the Name column, Cabin, Ticket, and Sex (since I copied and filled it to Gender)
     dataframe = dataframe.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId',
-                                'SibSp', 'Parch', 'Embarked', 'Fare', 'Age', 
+                                'SibSp', 'Parch', 'Embarked', 'Fare', 'Age',], axis=1)
                                 #'Pclass',
-                                ], axis=1)
+                                #], axis=1)
 
     return dataframe
 
@@ -72,7 +72,7 @@ def plot_vars(df):
     list_of_women = df['Gender'] == 0
     list_of_survivors = df['Survived'] == 1
     list_of_casualties = df['Survived'] == 0
-    
+
     vars_to_consider = ['Pclass', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked', 'Gender']
     list_of_plots = []
     for var in vars_to_consider:
@@ -101,15 +101,14 @@ def compare_models(traindata):
                 #'kNC5': KNeighborsClassifier(),
                 #'kNC6': KNeighborsClassifier(6),
                 'SVC': SVC(kernel="linear", C=0.025),
-                #'SVC': SVC(kernel='rbf', C=0.025, ),
+                #'SVC': SVC(kernel='rbf', C=0.025,),
                 #'DT': DecisionTreeClassifier(max_depth=5),
                 'RF': RandomForestClassifier(n_estimators=400),
                 'Ada': AdaBoostClassifier(),
-                'Gauss': GaussianNB(),
+                'Gauss': GaussianNB(),}
                 #'LDA': LDA(),
                 #'QDA': QDA(),
                 #'SVC2': SVC(),
-              }
 
     model_scores = {}
     for name in classifier_dict.keys():
@@ -117,14 +116,14 @@ def compare_models(traindata):
     for N in range(1):
         randint = reduce(lambda x,y: x|y, [ord(x)<<(n*8) for (n,x) in enumerate(os.urandom(4))])
         xtrain, xtest, ytrain, ytest = cross_validation.train_test_split(traindata[0::,1::], traindata[0::,0], test_size=0.4, random_state=randint)
-        
+
         #print('Training...')
         #forest = RandomForestClassifier(n_estimators=200)
         #forest = forest.fit(xtrain, ytrain)
         #print(traindf.columns[1:])
         #print(forest.feature_importances_)
         #print('score:', forest.score(xtest, ytest))
-        
+
         for name, cl in classifier_dict.items():
             model_scores[name].append(score_model(cl, xtrain, xtest, ytrain, ytest))
     for k in model_scores:
@@ -135,12 +134,12 @@ def compare_models(traindata):
 def mymodel(do_plots=False, do_comparison=False, do_submission=False):
     traindf = pd.read_csv('train.csv')
     testdf = pd.read_csv('test.csv')
-    
+
     testid = testdf['PassengerId'].values
-    
+
     traindf = preprocess_data(traindf)
     testdf = preprocess_data(testdf)
-    
+
     print(traindf.columns)
     print(traindf.describe())
 
@@ -159,11 +158,11 @@ def mymodel(do_plots=False, do_comparison=False, do_submission=False):
         xtrain = traindata[0::,1::]
         ytrain = traindata[0::,0]
         xtest = testdata
-        
+
         model = SVC(kernel="linear", C=0.025)
         model.fit(xtrain, ytrain)
         ytest = model.predict(xtest)
-        
+
         submitdf = pd.DataFrame(data={'PassengerId': testid, 'Survived': ytest.astype(int)})
         submitdf.to_csv('submit.csv', index=False)
 
